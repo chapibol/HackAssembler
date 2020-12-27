@@ -5,11 +5,10 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 public class Parser {
-    int instructionNum = 0;
+    int instructionNumber = 0;
     private final SymbolTable symbolTable = new SymbolTable();
-    private String parsedInstructions;
 
-    public void parse(File fileToParse) throws FileNotFoundException {
+    public String parse(File fileToParse) throws FileNotFoundException {
         Scanner firstPassScanner = new Scanner(fileToParse);
 
         // first pass gathering
@@ -17,21 +16,70 @@ public class Parser {
             String currentLine = firstPassScanner.nextLine();
             // if the line starts with // or is empty processing will be skipped
             if(isInstructionOrSymbol(currentLine)){
-                String cleanInstruction = cleanUpInstruction(currentLine);
-
-                if(isLabelInstruction(cleanInstruction)){
-                    symbolTable.getSymbols().put(getLabel(cleanInstruction), instructionNum);
+                if(isLabelInstruction(currentLine)){
+                    symbolTable.addSymbol(getLabel(cleanUpInstruction(currentLine)), instructionNumber);
                 }else{
-                    instructionNum++; // only increment if not a symbol
+                    instructionNumber++; // only increment if not a symbol
                 }
             }
         }
-        System.out.println(symbolTable.getSymbols().toString());
+        System.out.println(symbolTable.toString());
         firstPassScanner.close();
 
+        //reset instruction number tracker
+        instructionNumber = 0;
+        int n = 16;// the next available memory address
+        StringBuilder binaryProgram = new StringBuilder();
+
         Scanner secondPassScanner = new Scanner(fileToParse);
+        Code code = new Code();
+        while(secondPassScanner.hasNext()){
+            String currentLine = secondPassScanner.nextLine();
+            if(isInstructionOrSymbol(currentLine) || !isLabelInstruction(currentLine) ){ // ignoring label declarations
+                String cleanInstruction = cleanUpInstruction(currentLine);
+                if(isAInstruction(cleanInstruction)){
+                    String aInstructionValueOrSymbol = code.getAInstructionValue(cleanInstruction);// strip the @ from the command
+                    String binaryAInstruction = "";
+                    if(isNumber(aInstructionValueOrSymbol)){
+                        // go ahead and allocate and translate to payload
+                        binaryAInstruction += code.toBinaryAInstruction(Integer.parseInt(aInstructionValueOrSymbol));
+                    }else{
+                        // query symbol table and save it if not there
+                        Integer value = symbolTable.getSymbol(aInstructionValueOrSymbol);
+                        if(value == null){
+                            // add symbol to table
+                            symbolTable.addSymbol(aInstructionValueOrSymbol, n);
+                            binaryAInstruction += code.toBinaryAInstruction(n);
+                            n++; // increment next available address
+                        }else{
+                            binaryAInstruction += code.toBinaryAInstruction(value);
+                        }
+                    }
+                    binaryProgram.append(binaryAInstruction).append("\n");
+                }else{ // handling C instructions
+
+                }
+            }
+        }
+        return binaryProgram.toString().trim();
     }
 
+    private boolean isNumber(String aInstruction){
+        try{
+            Integer.parseInt(aInstruction);
+        }catch (NumberFormatException e){
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Method to clean up a dirty instruction. Dirty meaning it could have an inline comment or white space after the
+     * instruction. This method will remove the comment if there as well as any white space. returning the clean
+     * Instruction
+     * @param dirtyInstruction the instruction to clean
+     * @return clean instruction
+     */
     private String cleanUpInstruction(String dirtyInstruction){
         int potentialCommentLocation = dirtyInstruction.indexOf("//");
         if(potentialCommentLocation > 0){

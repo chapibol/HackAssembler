@@ -44,4 +44,16 @@ public class SymbolTable {
     public void setSymbols(Map<String, Integer> symbols) {
         this.symbols = symbols;
     }
+
+    public void addSymbol(String symbol, Integer value){
+        this.symbols.put(symbol, value);
+    }
+
+    public Integer getSymbol(String symbol){
+        return this.symbols.get(symbol);
+    }
+
+    public String toString(){
+        return this.symbols.toString();
+    }
 }
