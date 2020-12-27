@@ -35,33 +35,62 @@ public class Parser {
         Code code = new Code();
         while(secondPassScanner.hasNext()){
             String currentLine = secondPassScanner.nextLine();
-            if(isInstructionOrSymbol(currentLine) || !isLabelInstruction(currentLine) ){ // ignoring label declarations
+            if(isInstructionOrSymbol(currentLine) && !isLabelInstruction(currentLine) ){ // ignoring label declarations as well
                 String cleanInstruction = cleanUpInstruction(currentLine);
                 if(isAInstruction(cleanInstruction)){
                     String aInstructionValueOrSymbol = code.getAInstructionValue(cleanInstruction);// strip the @ from the command
                     String binaryAInstruction = "";
                     if(isNumber(aInstructionValueOrSymbol)){
                         // go ahead and allocate and translate to payload
-                        binaryAInstruction += code.toBinaryAInstruction(Integer.parseInt(aInstructionValueOrSymbol));
+                        binaryAInstruction += code.toBinary(Integer.parseInt(aInstructionValueOrSymbol));
                     }else{
                         // query symbol table and save it if not there
                         Integer value = symbolTable.getSymbol(aInstructionValueOrSymbol);
                         if(value == null){
                             // add symbol to table
                             symbolTable.addSymbol(aInstructionValueOrSymbol, n);
-                            binaryAInstruction += code.toBinaryAInstruction(n);
+                            binaryAInstruction += code.toBinary(n);
                             n++; // increment next available address
                         }else{
-                            binaryAInstruction += code.toBinaryAInstruction(value);
+                            binaryAInstruction += code.toBinary(value);
                         }
                     }
                     binaryProgram.append(binaryAInstruction).append("\n");
                 }else{ // handling C instructions
-
+                    String binaryCInstruction = code.toBinary(getDest(cleanInstruction), getComp(cleanInstruction), getJump(cleanInstruction));
+                    binaryProgram.append(binaryCInstruction).append("\n");
                 }
             }
         }
         return binaryProgram.toString().trim();
+    }
+
+    private String getJump(String cInstruction){
+        int semiColonLocation = getSemiColonLocation(cInstruction);
+        return semiColonLocation > 0 ? cInstruction.substring(semiColonLocation) : "";// will get D=D+A;JGE   "JGE" or "" if no semi
+    }
+
+    private String getComp(String cInstruction){
+        int semiColonLocation = getSemiColonLocation(cInstruction);
+        int equalSignLoc = getEqualSignLocation(cInstruction);
+        if(semiColonLocation > 0){
+            return cInstruction.substring(equalSignLoc + 1, semiColonLocation);// D=D+A;JGE will get "D+A"
+        }else{
+            return cInstruction.substring(equalSignLoc + 1);//D=D+A  will get "D+A"
+        }
+    }
+
+    private String getDest(String cInstruction){
+        int equalSignLocation = getEqualSignLocation(cInstruction);
+        return cInstruction.substring(0, equalSignLocation);
+    }
+
+    private int getSemiColonLocation(String instruction){
+        return instruction.indexOf(";");
+    }
+
+    private int getEqualSignLocation(String instruction){
+        return instruction.indexOf("=");
     }
 
     private boolean isNumber(String aInstruction){

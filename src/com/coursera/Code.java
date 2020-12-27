@@ -65,8 +65,16 @@ public class Code {
         }).collect(Collectors.toMap(p -> p[0], p -> p[1]));
     }
 
+    protected String toBinary(String dest, String comp, String jump){
+        String cPadding = "111";
+        String binaryDest = destinationValues.get(dest);
+        String binaryComp = computationValues.get(comp);
+        String binaryJump = jumpValues.get(jump);
+        return cPadding + binaryComp + binaryDest + binaryJump;
+    }
 
-    protected String toBinaryAInstruction(Integer value){
+
+    protected String toBinary(Integer value){
         String baseValue = Integer.toBinaryString(value);
         int numPadding = 16 - baseValue.length();
         return "0".repeat(Math.max(0, numPadding)) + baseValue;
