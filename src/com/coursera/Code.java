@@ -5,9 +5,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Code {
-    private Map<String, String> computationValues;
-    private Map<String, String> destinationValues;
-    private Map<String, String> jumpValues;
+
+    private final Map<String, String> computationValues;
+    private final Map<String, String> destinationValues;
+    private final Map<String, String> jumpValues;
 
     public Code(){
         // Initializing C instruction meanings
