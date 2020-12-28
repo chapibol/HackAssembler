@@ -13,17 +13,16 @@ public class Parser {
 
         // first pass gathering
         while(firstPassScanner.hasNext()){
-            String currentLine = firstPassScanner.nextLine();
+            String currentLine = firstPassScanner.nextLine().trim();
             // if the line starts with // or is empty processing will be skipped
             if(isInstructionOrSymbol(currentLine)){
                 if(isLabelInstruction(currentLine)){
                     symbolTable.addSymbol(getLabel(cleanUpInstruction(currentLine)), instructionNumber);
                 }else{
-                    instructionNumber++; // only increment if not a symbol
+                    instructionNumber++; // only increment if not a symbol declaration
                 }
             }
         }
-        System.out.println(symbolTable.toString());
         firstPassScanner.close();
 
         //reset instruction number tracker
@@ -34,7 +33,7 @@ public class Parser {
         Scanner secondPassScanner = new Scanner(fileToParse);
         Code code = new Code();
         while(secondPassScanner.hasNext()){
-            String currentLine = secondPassScanner.nextLine();
+            String currentLine = secondPassScanner.nextLine().trim();
             if(isInstructionOrSymbol(currentLine) && !isLabelInstruction(currentLine) ){ // ignoring label declarations as well
                 String cleanInstruction = cleanUpInstruction(currentLine);
                 if(isAInstruction(cleanInstruction)){
@@ -67,7 +66,7 @@ public class Parser {
 
     private String getJump(String cInstruction){
         int semiColonLocation = getSemiColonLocation(cInstruction);
-        return semiColonLocation > 0 ? cInstruction.substring(semiColonLocation) : "";// will get D=D+A;JGE   "JGE" or "" if no semi
+        return semiColonLocation > 0 ? cInstruction.substring(semiColonLocation + 1) : "";// will get D=D+A;JGE   "JGE" or "" if no semi
     }
 
     private String getComp(String cInstruction){
@@ -82,7 +81,7 @@ public class Parser {
 
     private String getDest(String cInstruction){
         int equalSignLocation = getEqualSignLocation(cInstruction);
-        return cInstruction.substring(0, equalSignLocation);
+        return equalSignLocation > 0 ? cInstruction.substring(0, equalSignLocation): "";
     }
 
     private int getSemiColonLocation(String instruction){
